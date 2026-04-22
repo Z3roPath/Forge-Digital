@@ -6,7 +6,7 @@
 <title>Forge Digital — Built to Ship</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -24,7 +24,7 @@
     --steel: oklch(0.72 0.06 220);
     --border: oklch(1 0 0 / 0.08);
     --card-bg: oklch(1 0 0 / 0.03);
-    --font-display: 'Syne', sans-serif;
+    --font-display: 'Outfit', sans-serif;
     --font-body: 'DM Sans', sans-serif;
   }
 
@@ -158,8 +158,8 @@
   .reveal-delay-6 { transition-delay: 0.48s; }
 
   /* NAV */
-  nav {
-    position: fixed;
+  nav { z-index: 100; }
+  .hamburger { z-index: 101; position: relative; }
     top: 0; left: 0; right: 0;
     z-index: 100;
     display: flex;
@@ -246,6 +246,7 @@
     text-transform: uppercase;
     color: var(--amber);
     margin-bottom: 28px;
+    white-space: nowrap;
     opacity: 0;
     animation: fadeUp 0.8s 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
@@ -320,6 +321,7 @@
     text-decoration: none;
     display: inline-block;
     transition: border-color 0.2s, color 0.2s;
+    white-space: nowrap;
   }
   .btn-secondary:hover { border-color: var(--fg-dim); }
   .cta-micro {
@@ -887,19 +889,91 @@
     accent-color: var(--amber);
   }
 
+  /* MOBILE MENU */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    padding: 4px;
+    background: none;
+    border: none;
+  }
+  .hamburger span {
+    display: block;
+    width: 22px; height: 2px;
+    background: var(--fg);
+    border-radius: 2px;
+    transition: transform 0.3s, opacity 0.3s;
+  }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  .mobile-menu {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: oklch(0.08 0.004 52 / 0.97);
+    backdrop-filter: blur(16px);
+    z-index: 99;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .mobile-menu.open { opacity: 1; }
+  .mobile-menu a {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--fg);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+    transition: color 0.2s;
+    padding: 8px 0;
+  }
+  .mobile-menu a:hover { color: var(--amber); }
+  .mobile-menu .mobile-cta {
+    margin-top: 24px;
+    background: var(--amber);
+    color: #0e0c0a !important;
+    padding: 16px 40px;
+    border-radius: 8px;
+    font-size: 18px;
+  }
   @media (max-width: 900px) {
+    .hamburger { display: flex; }
+    .mobile-menu { display: flex; pointer-events: none; }
+    .mobile-menu.open { pointer-events: all; }
+  }
     nav { padding: 16px 24px; }
     .nav-links { display: none; }
     section { padding: 80px 24px; }
     .hero { padding: 120px 24px 80px; }
+    .hero h1 { font-size: clamp(40px, 11vw, 72px); }
     .trust-inner { grid-template-columns: repeat(2, 1fr); }
+    .trust-item { padding: 28px 20px; }
     .services-grid { grid-template-columns: 1fr; }
     .steps { grid-template-columns: 1fr; gap: 40px; }
+    .steps-connector { display: none; }
     .portfolio-grid { grid-template-columns: 1fr; }
     .pricing-grid { grid-template-columns: 1fr; }
     .trust-bar { padding: 0 24px; }
     footer { flex-direction: column; gap: 16px; text-align: center; }
+    .footer-links { justify-content: center; flex-wrap: wrap; gap: 16px; }
     .final-cta { padding: 100px 24px; }
+    .final-cta h2 { font-size: clamp(32px, 9vw, 56px); }
+    .stat-strip { gap: 24px; flex-wrap: wrap; }
+    .stat-value { font-size: 22px; }
+    .hero-ctas { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .btn-primary, .btn-secondary { width: 100%; text-align: center; }
+    .pricing-card.featured::before { font-size: 9px; padding: 4px 12px; }
+    .section-title { font-size: clamp(28px, 7vw, 48px); }
+    .pricing-price { font-size: 38px; }
+    .tweaks-panel { width: calc(100vw - 48px); bottom: 12px; right: 24px; }
+    .hero-scroll { display: none; }
   }
 </style>
 </head>
@@ -1030,6 +1104,7 @@ function App() {
   const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
   const [tweaksVisible, setTweaksVisible] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     // Scroll progress bar
@@ -1272,7 +1347,18 @@ function App() {
           <a href="#faq">FAQ</a>
           <a href="#contact" className="nav-cta">Book a Call</a>
         </div>
+        <button className={`hamburger ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(o => !o)} aria-label="Menu">
+          <span/><span/><span/>
+        </button>
       </nav>
+      <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
+        {['#services','#how','#pricing','#faq'].map((href, i) => (
+          <a key={i} href={href} onClick={() => setMenuOpen(false)}>
+            {['Services','How it Works','Pricing','FAQ'][i]}
+          </a>
+        ))}
+        <a href="#contact" className="mobile-cta" onClick={() => setMenuOpen(false)}>Book a Call →</a>
+      </div>
 
       {/* HERO */}
       <section className="hero">
