@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Forge Digital — Built to Ship</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0c0a;
+    --bg2: #141210;
+    --fg: #f2ede6;
+    --fg-dim: #9c9488;
+    --amber: oklch(0.72 0.16 52);
+    --amber-glow: oklch(0.72 0.16 52 / 0.15);
+    --amber-dim: oklch(0.5 0.12 52);
+    --steel: oklch(0.72 0.06 220);
+    --border: oklch(1 0 0 / 0.08);
+    --card-bg: oklch(1 0 0 / 0.03);
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* NOISE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* SCROLL PROGRESS */
+  .scroll-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: var(--amber);
+    z-index: 200;
+    width: 0%;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 8px var(--amber);
+  }
+
+  /* SHIMMER BUTTON */
+  .btn-primary {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.25), transparent);
+    transform: skewX(-20deg);
+    animation: shimmer 3.5s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0% { left: -100%; }
+    40%, 100% { left: 160%; }
+  }
+
+  /* DRAW LINE - how it works */
+  .steps-connector {
+    position: absolute;
+    top: 28px;
+    left: calc(16.66% + 24px);
+    right: calc(16.66% + 24px);
+    height: 1px;
+    overflow: hidden;
+  }
+  .steps-connector-line {
+    height: 1px;
+    background: linear-gradient(90deg, var(--amber), var(--amber));
+    opacity: 0.35;
+    width: 0%;
+    transition: width 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .steps-connector-line.visible { width: 100%; }
+
+  /* TEXT SCRAMBLE */
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber); margin-bottom: 16px; font-family: monospace; }
+
+  /* CURSOR GLOW */
+  .cursor-glow {
+    position: fixed;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--amber-glow) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s;
+    opacity: 0;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--amber-dim); border-radius: 2px; }
+
+  /* TYPOGRAPHY */
+  h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; letter-spacing: -0.01em; }
+
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.visible { opacity: 1; transform: none; }
+  .reveal-left {
+    opacity: 0;
+    transform: translateX(-48px);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal-left.visible { opacity: 1; transform: none; }
+  .reveal-right {
+    opacity: 0;
+    transform: translateX(48px);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal-right.visible { opacity: 1; transform: none; }
+  .reveal-scale {
+    opacity: 0;
+    transform: scale(0.94);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal-scale.visible { opacity: 1; transform: none; }
+  .reveal-delay-1 { transition-delay: 0.08s; }
+  .reveal-delay-2 { transition-delay: 0.16s; }
+  .reveal-delay-3 { transition-delay: 0.24s; }
+  .reveal-delay-4 { transition-delay: 0.32s; }
+  .reveal-delay-5 { transition-delay: 0.40s; }
+  .reveal-delay-6 { transition-delay: 0.48s; }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+    transition: background 0.4s;
+  }
+  nav.scrolled {
+    background: oklch(0.08 0.004 52 / 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.03em;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--amber); }
+  .nav-links { display: flex; gap: 36px; align-items: center; }
+  .nav-links a {
+    color: var(--fg-dim);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--fg); }
+  .nav-cta {
+    background: var(--amber);
+    color: #0e0c0a !important;
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-weight: 700 !important;
+    transition: opacity 0.2s !important;
+    white-space: nowrap;
+  }
+  .nav-cta:hover { opacity: 0.85; color: #0e0c0a !important; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 160px 48px 100px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 60% 40%, oklch(0.45 0.16 52 / 0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 20% 80%, oklch(0.45 0.06 220 / 0.08) 0%, transparent 60%);
+    animation: heatShimmer 8s ease-in-out infinite alternate;
+  }
+  @keyframes heatShimmer {
+    0% { transform: scale(1) translateY(0); opacity: 0.8; }
+    100% { transform: scale(1.05) translateY(-10px); opacity: 1; }
+  }
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 80px 80px;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 0%, transparent 100%);
+    opacity: 0.4;
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: block;
+    width: 28px; height: 1px;
+    background: var(--amber);
+  }
+  .hero h1 {
+    font-size: clamp(52px, 8vw, 112px);
+    font-weight: 800;
+    max-width: 900px;
+    line-height: 1.13;
+    letter-spacing: -0.015em;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--amber);
+    position: relative;
+  }
+  .hero-sub {
+    font-size: clamp(17px, 2vw, 21px);
+    color: var(--fg-dim);
+    max-width: 520px;
+    line-height: 1.6;
+    margin-bottom: 44px;
+    font-weight: 300;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .hero-ctas {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .btn-primary {
+    background: var(--amber);
+    color: #0e0c0a;
+    border: none;
+    padding: 16px 32px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: transform 0.2s, box-shadow 0.2s;
+    letter-spacing: -0.01em;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px var(--amber-glow);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--border);
+    padding: 15px 32px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--fg-dim); }
+  .cta-micro {
+    font-size: 12px;
+    color: var(--fg-dim);
+    margin-top: 12px;
+    font-weight: 300;
+  }
+  .hero-scroll {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeUp 1s 1.1s forwards;
+  }
+  .scroll-line {
+    width: 1px; height: 48px;
+    background: linear-gradient(to bottom, transparent, var(--fg-dim));
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SECTION COMMON */
+  section { padding: 120px 48px; position: relative; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: clamp(36px, 4.5vw, 60px);
+    font-weight: 800;
+    max-width: 640px;
+    margin-bottom: 20px;
+    letter-spacing: -0.015em;
+    line-height: 1.13;
+  }
+  .section-sub {
+    color: var(--fg-dim);
+    max-width: 520px;
+    margin-bottom: 64px;
+    font-size: 18px;
+    font-weight: 300;
+    line-height: 1.65;
+  }
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+  }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  /* TRUST BAR */
+  .trust-bar {
+    padding: 0 48px 0;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .trust-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+  .trust-item {
+    padding: 40px 32px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .trust-item:last-child { border-right: none; }
+  .trust-marker {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--amber);
+  }
+  .trust-desc {
+    font-size: 14px;
+    color: var(--fg-dim);
+    line-height: 1.5;
+  }
+
+  /* SERVICES */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .service-card {
+    background: var(--bg);
+    padding: 44px 40px;
+    transition: background 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .service-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--amber-glow);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .service-card:hover { background: var(--bg2); }
+  .service-card:hover::after { opacity: 1; }
+  .service-icon {
+    width: 40px; height: 40px;
+    margin-bottom: 20px;
+    color: var(--amber);
+  }
+  .service-card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .service-card p {
+    font-size: 14px;
+    color: var(--fg-dim);
+    line-height: 1.65;
+    margin-bottom: 16px;
+  }
+  .service-for {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--amber);
+    opacity: 0.7;
+  }
+
+  /* HOW IT WORKS */
+  .how-bg { background: var(--bg2); }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 64px;
+    position: relative;
+  }
+  .steps { position: relative; }
+  .step-num {
+    font-family: var(--font-display);
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--border);
+    line-height: 1;
+    margin-bottom: 20px;
+    transition: color 0.3s;
+  }
+  .step:hover .step-num { color: var(--amber-glow); }
+  .step h3 { font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.01em; }
+  .step p { color: var(--fg-dim); font-size: 15px; line-height: 1.7; }
+
+  /* PORTFOLIO */
+  .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .portfolio-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--card-bg);
+    transition: transform 0.3s, border-color 0.3s;
+    cursor: pointer;
+  }
+  .portfolio-card:hover { transform: translateY(-4px); border-color: oklch(1 0 0 / 0.16); }
+  .portfolio-thumb {
+    height: 200px;
+    background: var(--bg2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .portfolio-thumb-label {
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--fg-dim);
+    opacity: 0.5;
+    text-align: center;
+    padding: 20px;
+    line-height: 1.8;
+  }
+  .portfolio-thumb-stripes {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 12px,
+      oklch(1 0 0 / 0.02) 12px,
+      oklch(1 0 0 / 0.02) 24px
+    );
+  }
+  .portfolio-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--amber);
+    background: var(--amber-glow);
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+  .portfolio-body { padding: 28px; }
+  .portfolio-body h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .portfolio-body p { font-size: 14px; color: var(--fg-dim); line-height: 1.65; }
+  .coming-soon-badge {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--fg-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .coming-soon-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--amber);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* WORD SPLIT TITLES */
+  .word-split .word {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: bottom;
+    margin-right: 0.25em;
+  }
+  .word-split .word-inner {
+    display: inline-block;
+    transform: translateY(110%);
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .word-split.visible .word-inner { transform: translateY(0); }
+  .word-split .word:nth-child(1) .word-inner { transition-delay: 0s; }
+  .word-split .word:nth-child(2) .word-inner { transition-delay: 0.07s; }
+  .word-split .word:nth-child(3) .word-inner { transition-delay: 0.14s; }
+  .word-split .word:nth-child(4) .word-inner { transition-delay: 0.21s; }
+  .word-split .word:nth-child(5) .word-inner { transition-delay: 0.28s; }
+  .word-split .word:nth-child(6) .word-inner { transition-delay: 0.35s; }
+  .word-split .word:nth-child(7) .word-inner { transition-delay: 0.42s; }
+
+  /* PRICING */
+  .pricing-bg { background: var(--bg2); }
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .pricing-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 44px 36px;
+    background: var(--bg);
+    transition: transform 0.3s, border-color 0.3s;
+    position: relative;
+  }
+  .pricing-card:hover { transform: translateY(-4px); }
+  .pricing-card.featured {
+    border-color: var(--amber);
+    background: oklch(0.12 0.008 52);
+    animation: featuredPulse 3s ease-in-out infinite;
+  }
+  @keyframes featuredPulse {
+    0%, 100% { box-shadow: 0 0 0 0 var(--amber-glow); }
+    50% { box-shadow: 0 0 32px 4px var(--amber-glow); }
+  }
+  .pricing-card.featured::before {
+    content: 'MOST POPULAR';
+    position: absolute;
+    top: -1px; left: 50%; transform: translateX(-50%);
+    background: var(--amber);
+    color: #0e0c0a;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    padding: 5px 14px;
+    border-radius: 0 0 6px 6px;
+  }
+  .pricing-tier {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 12px;
+  }
+  .pricing-price {
+    font-family: var(--font-display);
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .pricing-range { font-size: 14px; color: var(--fg-dim); margin-bottom: 8px; }
+  .pricing-desc { font-size: 14px; color: var(--fg-dim); margin-bottom: 28px; line-height: 1.6; }
+  .pricing-divider { height: 1px; background: var(--border); margin-bottom: 24px; }
+  .pricing-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .pricing-features li {
+    display: flex;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .pricing-features li::before {
+    content: '✓';
+    color: var(--amber);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .pricing-for {
+    font-size: 12px;
+    color: var(--fg-dim);
+    font-style: italic;
+    margin-top: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* FAQ */
+  .faq-list { max-width: 760px; }
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+  }
+  .faq-q {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    text-align: left;
+    padding: 28px 0;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    transition: color 0.2s;
+  }
+  .faq-q:hover { color: var(--amber); }
+  .faq-icon {
+    width: 24px; height: 24px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+    color: var(--amber);
+    transition: transform 0.3s, background 0.3s;
+  }
+  .faq-icon.open { transform: rotate(45deg); background: var(--amber-glow); }
+  .faq-a {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .faq-a.open { max-height: 300px; }
+  .faq-a-inner {
+    color: var(--fg-dim);
+    font-size: 15px;
+    line-height: 1.75;
+    padding-bottom: 28px;
+  }
+
+  /* FINAL CTA */
+  .final-cta {
+    padding: 160px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .final-cta-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 60% at 50% 50%, oklch(0.45 0.16 52 / 0.1) 0%, transparent 70%);
+  }
+  .final-cta h2 {
+    font-size: clamp(40px, 6vw, 80px);
+    font-weight: 800;
+    max-width: 720px;
+    margin: 0 auto 20px;
+    line-height: 1.05;
+  }
+  .final-cta p {
+    color: var(--fg-dim);
+    font-size: 18px;
+    max-width: 440px;
+    margin: 0 auto 44px;
+    font-weight: 300;
+  }
+  .final-cta-btns {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  footer p { font-size: 13px; color: var(--fg-dim); }
+  footer a { color: var(--fg-dim); text-decoration: none; font-size: 13px; }
+  footer a:hover { color: var(--amber); }
+  .footer-links { display: flex; gap: 28px; }
+
+  /* STAT COUNTER STRIP */
+  .stat-strip {
+    display: flex;
+    gap: 48px;
+    margin-top: 60px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .stat-item { display: flex; flex-direction: column; gap: 2px; }
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--amber);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .stat-label { font-size: 12px; color: var(--fg-dim); font-weight: 400; }
+
+  /* PAGE FLASH TRANSITION */
+  .page-flash {
+    position: fixed;
+    inset: 0;
+    background: var(--amber);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 9999;
+    transition: opacity 0.15s ease;
+  }
+  .page-flash.active { opacity: 0.04; }
+
+  /* NAV ACTIVE */
+  .nav-links a.active { color: var(--amber) !important; }
+
+  /* FOOTER GLOW */
+  .final-cta::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 300px;
+    background: radial-gradient(ellipse at bottom, var(--amber-glow) 0%, transparent 70%);
+    animation: riseGlow 4s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes riseGlow {
+    0% { transform: translateX(-50%) translateY(0); opacity: 0.5; }
+    100% { transform: translateX(-50%) translateY(-40px); opacity: 1; }
+  }
+
+  /* SERVICE ICON ANIMATION */
+  .service-icon-wrap { display: inline-block; }
+  .service-icon-wrap.animate { animation: iconPop 0.6s cubic-bezier(0.16,1,0.3,1) forwards; }
+  @keyframes iconPop {
+    0% { transform: scale(0.7) rotate(-10deg); opacity: 0; }
+    60% { transform: scale(1.15) rotate(4deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  /* TWEAKS PANEL */
+  .tweaks-panel {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: oklch(0.12 0.008 52 / 0.95);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 280px;
+    z-index: 999;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 24px 64px oklch(0 0 0 / 0.5);
+    display: none;
+  }
+  .tweaks-panel.visible { display: block; }
+  .tweaks-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--amber);
+    letter-spacing: 0.04em;
+  }
+  .tweak-row { margin-bottom: 16px; }
+  .tweak-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .tweak-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tweak-opt {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--fg-dim);
+    font-size: 12px;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tweak-opt:hover, .tweak-opt.active {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: var(--amber-glow);
+  }
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--amber);
+  }
+
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    section { padding: 80px 24px; }
+    .hero { padding: 120px 24px 80px; }
+    .trust-inner { grid-template-columns: repeat(2, 1fr); }
+    .services-grid { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; gap: 40px; }
+    .portfolio-grid { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .trust-bar { padding: 0 24px; }
+    footer { flex-direction: column; gap: 16px; text-align: center; }
+    .final-cta { padding: 100px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentColor": "teal",
+  "heroHeadline": "default",
+  "borderRadius": "round"
+}/*EDITMODE-END*/;
+
+const ACCENT_MAP = {
+  amber: { main: 'oklch(0.72 0.16 52)', glow: 'oklch(0.72 0.16 52 / 0.15)', dim: 'oklch(0.5 0.12 52)' },
+  teal:  { main: 'oklch(0.72 0.14 185)', glow: 'oklch(0.72 0.14 185 / 0.15)', dim: 'oklch(0.5 0.10 185)' },
+  violet: { main: 'oklch(0.72 0.14 290)', glow: 'oklch(0.72 0.14 290 / 0.15)', dim: 'oklch(0.5 0.10 290)' },
+};
+
+const HEADLINES = {
+  default: <>Your next big idea,<br/><em>forged to ship.</em></>,
+  bold: <>Stop waiting.<br/><em>Start shipping.</em></>,
+  gritty: <>Built right.<br/><em>Shipped fast.</em></>,
+};
+
+function useIntersection(ref, options = {}) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setVisible(true); obs.disconnect(); }
+    }, { threshold: 0.08, ...options });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return visible;
+}
+
+function RevealSection({ children, className = '', delay = 0, type = 'up' }) {
+  const ref = useRef();
+  const visible = useIntersection(ref);
+  const base = type === 'left' ? 'reveal-left' : type === 'right' ? 'reveal-right' : type === 'scale' ? 'reveal-scale' : 'reveal';
+  return (
+    <div ref={ref} className={`${base} ${visible ? 'visible' : ''} ${delay ? `reveal-delay-${delay}` : ''} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+// Text scramble
+function scramble(el, finalText, duration = 800) {
+  const chars = '!<>-_\\/[]{}—=+*^?#ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let frame = 0;
+  const totalFrames = Math.floor(duration / 30);
+  const update = () => {
+    el.textContent = finalText.split('').map((ch, i) => {
+      if (frame / totalFrames > i / finalText.length) return ch;
+      return ch === ' ' ? ' ' : chars[Math.floor(Math.random() * chars.length)];
+    }).join('');
+    if (frame++ < totalFrames) requestAnimationFrame(update);
+    else el.textContent = finalText;
+  };
+  update();
+}
+
+// Typewriter
+function typewriter(el, text, speed = 55) {
+  el.textContent = '';
+  let i = 0;
+  const tick = () => {
+    el.textContent += text[i++];
+    if (i < text.length) setTimeout(tick, speed);
+  };
+  tick();
+}
+
+function WordSplit({ children, tag: Tag = 'h2', className = '' }) {
+  const ref = useRef();
+  const visible = useIntersection(ref);
+  const words = children.split(' ');
+  return (
+    <Tag ref={ref} className={`word-split ${visible ? 'visible' : ''} ${className}`}>
+      {words.map((w, i) => (
+        <span key={i} className="word">
+          <span className="word-inner">{w}</span>
+        </span>
+      ))}
+    </Tag>
+  );
+}
+
+function ServiceIcon({ type }) {
+  const icons = {
+    web: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>,
+    auto: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>,
+    saas: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+    support: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+    design: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>,
+    mvp: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  };
+  return <div className="service-icon">{icons[type]}</div>;
+}
+
+function FAQ({ faqs }) {
+  const [open, setOpen] = useState(null);
+  return (
+    <div className="faq-list">
+      {faqs.map((faq, i) => (
+        <div key={i} className="faq-item">
+          <button className="faq-q" onClick={() => setOpen(open === i ? null : i)}>
+            {faq.q}
+            <span className={`faq-icon ${open === i ? 'open' : ''}`}>+</span>
+          </button>
+          <div className={`faq-a ${open === i ? 'open' : ''}`}>
+            <div className="faq-a-inner">{faq.a}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function App() {
+  const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
+  const [tweaksVisible, setTweaksVisible] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    // Scroll progress bar
+    const progressBar = document.querySelector('.scroll-progress');
+    const cursorGlow = document.querySelector('.cursor-glow');
+
+    // Typewriter on hero eyebrow
+    const eyebrow = document.querySelector('.hero-eyebrow');
+    if (eyebrow) {
+      const txt = eyebrow.textContent;
+      eyebrow.textContent = '';
+      setTimeout(() => typewriter(eyebrow, txt, 60), 400);
+    }
+
+    // Scramble on section labels via IntersectionObserver
+    const labelObs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          scramble(entry.target, entry.target.dataset.text || entry.target.textContent);
+          labelObs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.section-label').forEach(el => {
+      el.dataset.text = el.textContent;
+      labelObs.observe(el);
+    });
+
+    // Draw-in step connector
+    const connectorObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); connectorObs.unobserve(e.target); } });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('.steps-connector-line').forEach(el => connectorObs.observe(el));
+
+    // 3D card tilt
+    const setupTilt = () => {
+      document.querySelectorAll('.service-card, .portfolio-card, .pricing-card').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = (e.clientX - rect.left) / rect.width - 0.5;
+          const y = (e.clientY - rect.top) / rect.height - 0.5;
+          card.style.transform = `perspective(600px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) translateY(-4px)`;
+          card.style.transition = 'transform 0.1s ease';
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = '';
+          card.style.transition = 'transform 0.5s cubic-bezier(0.16,1,0.3,1)';
+        });
+      });
+    };
+    setTimeout(setupTilt, 800);
+
+    // Nav active section tracking
+    const sections = ['services','how','work','pricing','faq','contact'];
+    const sectionEls = sections.map(id => document.getElementById(id)).filter(Boolean);
+    const navLinks = document.querySelectorAll('.nav-links a');
+    const updateActiveNav = () => {
+      let current = '';
+      sectionEls.forEach(el => {
+        if (window.scrollY >= el.offsetTop - 200) current = el.id;
+      });
+      navLinks.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === `#${current}`);
+      });
+    };
+
+    // Page flash on anchor clicks
+    const flash = document.getElementById('page-flash');
+    const handleAnchorClick = (e) => {
+      const href = e.currentTarget.getAttribute('href');
+      if (href && href.startsWith('#') && flash) {
+        flash.classList.add('active');
+        setTimeout(() => flash.classList.remove('active'), 300);
+      }
+    };
+    document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', handleAnchorClick));
+
+    // Icon animations on scroll
+    const iconObs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const wrap = entry.target.querySelector('.service-icon-wrap');
+          if (wrap) { wrap.classList.remove('animate'); void wrap.offsetWidth; wrap.classList.add('animate'); }
+          iconObs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('.service-card').forEach(card => iconObs.observe(card));
+
+    const onScroll = () => {
+      setScrolled(window.scrollY > 60);
+      updateActiveNav();
+      // Progress
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (progressBar) progressBar.style.width = (window.scrollY / max * 100) + '%';
+      // Parallax hero
+      const heroBg = document.querySelector('.hero-bg');
+      const heroGrid = document.querySelector('.hero-grid');
+      if (heroBg) heroBg.style.transform = `translateY(${window.scrollY * 0.25}px)`;
+      if (heroGrid) heroGrid.style.transform = `translateY(${window.scrollY * 0.12}px)`;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Cursor glow
+    const onMouseMove = (e) => {
+      if (cursorGlow) {
+        cursorGlow.style.left = e.clientX + 'px';
+        cursorGlow.style.top = e.clientY + 'px';
+        cursorGlow.style.opacity = '1';
+      }
+    };
+    const onMouseLeave = () => { if (cursorGlow) cursorGlow.style.opacity = '0'; };
+    window.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseleave', onMouseLeave);
+
+    // Magnetic buttons
+    const setupMagnetic = () => {
+      document.querySelectorAll('.btn-primary, .btn-secondary').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          const rect = btn.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const dx = (e.clientX - cx) * 0.25;
+          const dy = (e.clientY - cy) * 0.25;
+          btn.style.transform = `translate(${dx}px, ${dy}px)`;
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.transform = '';
+        });
+      });
+    };
+    setTimeout(setupMagnetic, 800);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseleave', onMouseLeave);
+    };
+  }, []);
+
+  // Apply accent color
+  useEffect(() => {
+    const a = ACCENT_MAP[tweaks.accentColor] || ACCENT_MAP.amber;
+    document.documentElement.style.setProperty('--amber', a.main);
+    document.documentElement.style.setProperty('--amber-glow', a.glow);
+    document.documentElement.style.setProperty('--amber-dim', a.dim);
+  }, [tweaks.accentColor]);
+
+  // Apply border radius
+  useEffect(() => {
+    const r = { sharp: '2px', medium: '6px', round: '12px' }[tweaks.borderRadius] || '6px';
+    document.documentElement.style.setProperty('--btn-r', r);
+    document.querySelectorAll('.btn-primary, .btn-secondary').forEach(el => el.style.borderRadius = r);
+  }, [tweaks.borderRadius]);
+
+  // Tweaks message protocol
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksVisible(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksVisible(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const updateTweak = (key, val) => {
+    setTweaks(t => {
+      const next = { ...t, [key]: val };
+      window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: val } }, '*');
+      return next;
+    });
+  };
+
+  const services = [
+    { icon: 'web', title: 'Landing Pages & Websites', desc: 'Fast, conversion-focused sites built to rank and convert. Design, copy, and deployment included.', for: 'Solo founders, new products, service businesses.' },
+    { icon: 'auto', title: 'Workflow Automation', desc: 'We connect your tools and cut the manual work. Integrations, reminders, triggers — set once, run forever.', for: 'Businesses losing hours to repetitive tasks.' },
+    { icon: 'saas', title: 'Lightweight SaaS MVPs', desc: 'From idea to working product. Next.js, Supabase, Stripe — the right stack to validate fast and scale smart.', for: 'Founders ready to test an idea for real.' },
+    { icon: 'support', title: 'Ongoing Support & Iterations', desc: 'Ship weekly. Stay current. We become your embedded dev team — no hiring, no overhead.', for: 'Growing businesses who need consistent progress.' },
+    { icon: 'design', title: 'UI/UX Design', desc: 'Clean, purposeful interfaces. No bloat. Designed for how people actually use your product.', for: 'Anyone who\'s tired of ugly, confusing software.' },
+    { icon: 'mvp', title: 'Rapid Prototyping', desc: 'Turn a rough idea into a clickable demo in days. Great for investor pitches or client presentations.', for: 'Founders who need to show, not tell.' },
+  ];
+
+  const steps = [
+    { n: '01', title: 'Book a 15-Minute Call', desc: 'Tell us what you\'re building. No prep needed — just come with the problem. We\'ll ask the right questions.' },
+    { n: '02', title: 'Get a Clear Proposal', desc: 'Scope, timeline, and price — in plain English. No surprises, no fluff. You\'ll know exactly what you\'re getting.' },
+    { n: '03', title: 'We Build. You Ship.', desc: 'Fast turnaround. Regular check-ins. Revisions included. You\'ll have something real in your hands quickly.' },
+  ];
+
+  const portfolio = [
+    { tag: 'SaaS MVP', title: 'Scheduling Tool for Independent Trainers', desc: 'A booking and payment platform built for personal trainers. Client management, recurring billing, and a client-facing portal. Case study coming soon.', img: 'scheduling app / calendar UI' },
+    { tag: 'Automation', title: 'Lead Follow-Up System for a Service Business', desc: 'Automated intake, qualification, and follow-up emails — triggered by a simple form. Owner stopped losing leads overnight. Case study coming soon.', img: 'automation workflow diagram' },
+    { tag: 'Landing Page', title: 'Launch Page for a New Consumer App', desc: 'A pre-launch waitlist page that drove early signups before a single line of product code was written. Case study coming soon.', img: 'landing page layout / mobile + desktop' },
+  ];
+
+  const pricing = [
+    {
+      tier: 'Starter', price: 'From $800', range: 'One-time project',
+      desc: 'For founders who need something built fast, without the agency overhead.',
+      features: ['Landing page or small site', 'Up to 5 pages', 'Mobile responsive', 'Basic SEO setup', 'One round of revisions', '2-week delivery'],
+      for: 'Best for: new businesses, simple MVPs, idea validation.', cta: 'Get a Quote',
+    },
+    {
+      tier: 'Growth', price: 'From $2,500', range: 'Project + 1 month support', featured: true,
+      desc: 'For businesses ready to move fast and need ongoing momentum after launch.',
+      features: ['Full site or SaaS MVP', 'Automation setup', 'Stripe / Supabase integration', '30 days of support + iterations', 'Analytics + conversion tracking', 'Weekly check-ins'],
+      for: 'Best for: funded founders, growing service businesses.', cta: 'Book a Call',
+    },
+    {
+      tier: 'Partner', price: 'Custom', range: 'Monthly retainer',
+      desc: 'We become your embedded dev team. Ongoing builds, fixes, and shipping — every single week.',
+      features: ['Unlimited iterations', 'Priority turnaround', 'Dedicated Slack channel', 'Monthly strategy call', 'New features on demand', 'Full codebase ownership'],
+      for: 'Best for: businesses that ship constantly and need a reliable team.', cta: 'Let\'s Talk',
+    },
+  ];
+
+  const faqs = [
+    { q: 'How long does a typical project take?', a: 'A landing page takes 1–2 weeks. A simple SaaS MVP typically runs 4–8 weeks depending on scope. We\'ll give you a specific timeline in the proposal — and we stick to it.' },
+    { q: 'How does pricing work?', a: 'Projects are priced based on scope, not hourly rates. You\'ll get a flat quote upfront. No surprise invoices. For ongoing work, we offer a monthly retainer.' },
+    { q: 'How many revisions do I get?', a: 'Every project includes at least one full round of revisions. Most clients don\'t need more — because we align on the brief before we build. For retainer clients, iteration is unlimited.' },
+    { q: 'What\'s your tech stack?', a: 'For web apps: Next.js, Supabase, Stripe, Tailwind. For automation: n8n, Zapier, and custom integrations. For sites: whatever deploys fast and performs well. We\'ll tell you exactly what we use and why.' },
+    { q: 'Who handles hosting and deployment?', a: 'We handle the full launch — you own the accounts. Vercel, Cloudflare, or wherever makes sense for the project. Nothing is locked in with us.' },
+    { q: 'Do I own the code?', a: 'Yes. Full source code, full ownership. The moment you pay, it\'s yours. No licensing, no lock-in.' },
+    { q: 'What do you need from me to get started?', a: 'A rough brief, your brand assets if you have them, and an idea of your deadline. We handle the rest. You don\'t need a spec doc or wireframes — that\'s our job.' },
+    { q: 'Do you offer ongoing maintenance?', a: 'Yes. Our Growth and Partner tiers include support after launch. For Starter projects, we offer an affordable maintenance add-on.' },
+  ];
+
+  return (
+    <>
+      <div className="scroll-progress" />
+      <div className="cursor-glow" />
+      <div className="page-flash" id="page-flash" />
+      {/* NAV */}
+      <nav className={scrolled ? 'scrolled' : ''}>
+        <a href="#" className="nav-logo">Forge<span>.</span></a>
+        <div className="nav-links">
+          <a href="#services">Services</a>
+          <a href="#how">How it Works</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#faq">FAQ</a>
+          <a href="#contact" className="nav-cta">Book a Call</a>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section className="hero">
+        <div className="hero-bg" />
+        <div className="hero-grid" />
+        <div className="container" style={{position:'relative'}}>
+          <div className="hero-eyebrow">Software Studio</div>
+          <h1>{HEADLINES[tweaks.heroHeadline]}</h1>
+          <p className="hero-sub">
+            We build landing pages, automations, and SaaS MVPs for solo founders and small businesses.
+            Fast turnaround. No fluff. Real results.
+          </p>
+          <div className="hero-ctas">
+            <div>
+              <a href="#contact" className="btn-primary">Book a Call →</a>
+              <p className="cta-micro">15 minutes, no pressure.</p>
+            </div>
+            <div>
+              <a href="#pricing" className="btn-secondary">Get a Quote</a>
+              <p className="cta-micro">Flat rates, no surprises.</p>
+            </div>
+          </div>
+          <div className="stat-strip">
+            {[{v:'50+',l:'Projects shipped'},{v:'<2wk',l:'Avg. delivery time'},{v:'100%',l:'Code ownership'},{v:'24hr',l:'First reply guarantee'}].map((s,i)=>(
+              <div key={i} className="stat-item">
+                <span className="stat-value">{s.v}</span>
+                <span className="stat-label">{s.l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="hero-scroll"><div className="scroll-line" /></div>
+      </section>
+
+      {/* TRUST BAR */}
+      <div className="trust-bar">
+        <div className="trust-inner">
+          {[
+            { marker: 'Engineer-Built', desc: 'Every project written by senior engineers. No outsourcing, no templates.' },
+            { marker: 'Fast Turnaround', desc: 'Most projects delivered in 1–4 weeks. Not months.' },
+            { marker: 'You Own Everything', desc: 'Full code ownership. No lock-in, ever.' },
+            { marker: 'Transparent Pricing', desc: 'Flat-rate quotes. No billable hour surprises.' },
+          ].map((t, i) => (
+            <RevealSection key={i} className={`trust-item reveal-delay-${i+1}`}>
+              <div className="trust-marker">{t.marker}</div>
+              <div className="trust-desc">{t.desc}</div>
+            </RevealSection>
+          ))}
+        </div>
+      </div>
+
+      {/* SERVICES */}
+      <section id="services">
+        <div className="container">
+          <RevealSection type="left"><div className="section-label">What We Build</div></RevealSection>
+          <WordSplit className="section-title">The tools that grow your business.</WordSplit>
+          <RevealSection type="left" delay={2}>
+            <p className="section-sub">Everything we build has one goal: save you time or make you money. Usually both.</p>
+          </RevealSection>
+          <div className="services-grid">
+            {services.map((s, i) => (
+              <RevealSection key={i} type="scale" delay={(i % 3) + 1}>
+                <div className="service-card">
+                <div className="service-icon-wrap">
+                  <ServiceIcon type={s.icon} />
+                </div>
+                  <h3>{s.title}</h3>
+                  <p>{s.desc}</p>
+                  <div className="service-for">For: {s.for}</div>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how" className="how-bg">
+        <div className="container">
+          <RevealSection type="right"><div className="section-label">The Process</div></RevealSection>
+          <WordSplit className="section-title">Simple from day one.</WordSplit>
+          <RevealSection type="right" delay={2}>
+            <p className="section-sub">No lengthy onboarding, no confusing contracts. Here's how we go from conversation to shipped product.</p>
+          </RevealSection>
+          <div className="steps">
+            <div className="steps-connector"><div className="steps-connector-line" /></div>
+            {steps.map((s, i) => (
+              <RevealSection key={i} type="up" delay={i + 2}>
+                <div className="step">
+                  <div className="step-num">{s.n}</div>
+                  <h3>{s.title}</h3>
+                  <p>{s.desc}</p>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PORTFOLIO */}
+      <section id="work">
+        <div className="container">
+          <RevealSection type="left"><div className="section-label">Our Work</div></RevealSection>
+          <WordSplit className="section-title">Built by us. Owned by you.</WordSplit>
+          <RevealSection type="left" delay={2}>
+            <p className="section-sub">We're early. But the work speaks for itself. Full case studies coming soon.</p>
+          </RevealSection>
+          <div className="portfolio-grid">
+            {portfolio.map((p, i) => (
+              <RevealSection key={i} type="up" delay={i + 1}>
+                <div className="portfolio-card">
+                  <div className="portfolio-thumb">
+                    <div className="portfolio-thumb-stripes" />
+                    <div className="portfolio-thumb-label">[ {p.img} ]</div>
+                  </div>
+                  <div className="portfolio-body">
+                    <span className="portfolio-tag">{p.tag}</span>
+                    <h3>{p.title}</h3>
+                    <p>{p.desc}</p>
+                    <div className="coming-soon-badge">Full case study in progress</div>
+                  </div>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing" className="pricing-bg">
+        <div className="container">
+          <RevealSection type="right"><div className="section-label">Pricing</div></RevealSection>
+          <WordSplit className="section-title">Clear pricing. No hourly rates.</WordSplit>
+          <RevealSection type="right" delay={2}>
+            <p className="section-sub">You'll know the price before we start. Every time.</p>
+          </RevealSection>
+          <div className="pricing-grid">
+            {pricing.map((p, i) => (
+              <RevealSection key={i} type="scale" delay={i + 1}>
+                <div className={`pricing-card ${p.featured ? 'featured' : ''}`}>
+                  <div className="pricing-tier">{p.tier}</div>
+                  <div className="pricing-price">{p.price}</div>
+                  <div className="pricing-range">{p.range}</div>
+                  <div className="pricing-desc">{p.desc}</div>
+                  <div className="pricing-divider" />
+                  <ul className="pricing-features">
+                    {p.features.map((f, j) => <li key={j}>{f}</li>)}
+                  </ul>
+                  <a href="#contact" className={p.featured ? 'btn-primary' : 'btn-secondary'} style={{display:'block',textAlign:'center',textDecoration:'none'}}>{p.cta}</a>
+                  <div className="pricing-for">{p.for}</div>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq">
+        <div className="container">
+          <RevealSection type="left"><div className="section-label">FAQ</div></RevealSection>
+          <WordSplit className="section-title" style={{marginBottom:'48px'}}>Good questions deserve straight answers.</WordSplit>
+          <RevealSection type="up" delay={2}>
+            <FAQ faqs={faqs} />
+          </RevealSection>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section id="contact" className="final-cta">
+        <div className="final-cta-bg" />
+        <div style={{position:'relative'}}>
+          <RevealSection type="scale">
+            <div className="section-label" style={{marginBottom:'20px',textAlign:'center'}}>Ready?</div>
+            <h2>Let's build something worth having.</h2>
+          </RevealSection>
+          <RevealSection type="up" delay={1}>
+            <p>Most clients are shipping within two weeks of their first call. Yours could be next.</p>
+          </RevealSection>
+          <RevealSection type="up" delay={2}>
+            <div className="final-cta-btns">
+              <div style={{textAlign:'center'}}>
+                <a href="mailto:hello@forgedigital.io" className="btn-primary">Book a Call →</a>
+                <p className="cta-micro" style={{marginTop:'10px'}}>15 minutes, no pressure.</p>
+              </div>
+              <div style={{textAlign:'center'}}>
+                <a href="mailto:hello@forgedigital.io" className="btn-secondary">Request a Quote</a>
+                <p className="cta-micro" style={{marginTop:'10px'}}>We'll reply within 24 hours.</p>
+              </div>
+            </div>
+          </RevealSection>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer>
+        <a href="#" className="nav-logo" style={{fontSize:'16px'}}>Forge<span style={{color:'var(--amber)'}}>.</span></a>
+        <p style={{color:'var(--fg-dim)',fontSize:'13px'}}>© 2026 Forge Digital. All rights reserved.</p>
+        <div className="footer-links">
+          <a href="#">Twitter</a>
+          <a href="#">LinkedIn</a>
+          <a href="mailto:hello@forgedigital.io">hello@forgedigital.io</a>
+        </div>
+      </footer>
+
+      {/* TWEAKS PANEL */}
+      <div className={`tweaks-panel ${tweaksVisible ? 'visible' : ''}`}>
+        <div className="tweaks-title">Tweaks</div>
+
+        <div className="tweak-row">
+          <span className="tweak-label">Accent Color</span>
+          <div className="tweak-options">
+            {['amber','teal','violet'].map(c => (
+              <button key={c} className={`tweak-opt ${tweaks.accentColor === c ? 'active' : ''}`}
+                onClick={() => updateTweak('accentColor', c)}>
+                {c.charAt(0).toUpperCase() + c.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="tweak-row">
+          <span className="tweak-label">Hero Headline</span>
+          <div className="tweak-options">
+            {[['default','Forged to Ship'],['bold','Stop Waiting'],['gritty','Built Right']].map(([k,l]) => (
+              <button key={k} className={`tweak-opt ${tweaks.heroHeadline === k ? 'active' : ''}`}
+                onClick={() => updateTweak('heroHeadline', k)}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="tweak-row">
+          <span className="tweak-label">Button Style</span>
+          <div className="tweak-options">
+            {['sharp','medium','round'].map(r => (
+              <button key={r} className={`tweak-opt ${tweaks.borderRadius === r ? 'active' : ''}`}
+                onClick={() => updateTweak('borderRadius', r)}>
+                {r.charAt(0).toUpperCase() + r.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
