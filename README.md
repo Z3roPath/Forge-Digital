@@ -74,3 +74,5 @@ Simply open `project/index.html` in a modern browser. No build step required.
 Built with care for impact.
 
 - Badge sprint note (2026-05-27 16:10 UTC): small docs maintenance update.
+
+- Badge sprint note (2026-05-27 16:19 UTC): micro docs consistency pass.
