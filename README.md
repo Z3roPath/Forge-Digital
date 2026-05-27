@@ -1,5 +1,7 @@
 # Forge Digital Landing Page
 
+> Motto: **Code the future, automate the present.**
+
 Beautiful, animated landing page for Forge Digital — a software studio building landing pages, automations, and SaaS MVPs.
 
 ## Features
